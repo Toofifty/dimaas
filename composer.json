@@ -1,0 +1,21 @@
+{
+    "name": "toofifty/dimaas",
+    "description": "Device Image Mocks as a Service",
+    "type": "project",
+    "require": {
+        "symfony/dotenv": "^4.2"
+    },
+    "autoload": {
+        "files": ["src/util/functions.php"],
+        "psr-4": {
+            "DIM\\": "src"
+        }
+    },
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Alex Matheson",
+            "email": "alex@matho.me"
+        }
+    ]
+}

@@ -1,0 +1,5 @@
+# Rewrite all to index.php
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteRule ^(([^/\.]+)/?)+$ index.php [L]
+</IfModule>
