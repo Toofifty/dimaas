@@ -8,43 +8,6 @@ class Router
     private static $groups = [];
 
     /**
-     * Register a GET route
-     *
-     * @param string $path
-     * @param string $class
-     * @return void
-     */
-    public static function get(string $path, string $class): void
-    {
-        self::register('GET', $path, $class);
-    }
-
-    /**
-     * Register a POST route
-     *
-     * @param string $path
-     * @param string $class
-     * @return void
-     */
-    public static function post(string $path, string $class): void
-    {
-        self::register('POST', $path, $class);
-    }
-
-    /**
-     * Register a GET and POST route
-     *
-     * @param string $path
-     * @param string $class
-     * @return void
-     */
-    public static function any(string $path, string $class): void
-    {
-        self::get($path, $class);
-        self::post($path, $class);
-    }
-
-    /**
      * Group requests in a namespace
      *
      * @param string $group
@@ -66,11 +29,11 @@ class Router
      * @param string $class
      * @return void
      */
-    private static function register(string $method, string $path, string $class): void
+    public static function on(string $path, string $class, string $func = 'execute'): void
     {
         $groups = implode('/', self::$groups);
         $path = self::slash("$groups/$path");
-        self::$routes["^{$method}::{$path}$"] = $class;
+        self::$routes["^{$path}$"] = [$class, $func];
     }
 
     /**
@@ -123,15 +86,15 @@ class Router
      * @param string $path
      * @return array
      */
-    private static function getRoute(string $method, string $path): array
+    private static function getRoute(string $path): array
     {
         $matches = [];
-        foreach (self::$routes as $route => $class) {
-            if (preg_match_all('|' . $route . '|', "{$method}::{$path}", $matches)) {
+        foreach (self::$routes as $route => $action) {
+            if (preg_match_all('|' . $route . '|', $path, $matches)) {
                 // remove full pattern
                 array_shift($matches);
                 // get value of each match
-                return [$class, array_map(function ($match) {
+                return [$action, array_map(function ($match) {
                     return $match[0];
                 }, $matches)];
             }
@@ -149,13 +112,13 @@ class Router
      * @param string $path
      * @return void
      */
-    public static function execute(string $method, string $path)
+    public static function execute(string $path)
     {
         // correct POST for JSON
         $_POST = json_decode(file_get_contents('php://input'), true);
 
-        [$class, $params] = self::getRoute($method, self::clean($path));
+        [[$class, $func], $params] = self::getRoute(self::clean($path));
 
-        (new $class)->execute($params);
+        (new $class)->$func($params);
     }
 }
