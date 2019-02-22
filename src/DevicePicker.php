@@ -15,7 +15,7 @@ class DevicePicker
     public function pick(array $options): string
     {
         $chosen = $this->pickClosest($options);
-        return file_get_contents(BASE_DIR . "/devices/{$chosen['form']}/{$chosen['name']}.svg");
+        return file_get_contents(BASE_DIR . "/devices/{$chosen['form']}/{$chosen['name']}.html");
     }
 
     public function pickClosest(array $options): array

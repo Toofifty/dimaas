@@ -19,8 +19,6 @@ class SmartController
 
     public function fromSize(array $params)
     {
-        validate('image');
-
         $params['width'] = $params['width'] ?? $params['both'];
         $params['height'] = $params['height'] ?? $params['both'];
         $params['image_url'] = param('image');
@@ -28,7 +26,9 @@ class SmartController
 
         header('Content-Type: image/svg+xml');
 
-        if (!$params['inline']) {
+        // dd($params);
+
+        if ($params['image_url'] && !$params['inline']) {
             $image = new Image(param('image'));
             $params['image'] = $image->base64();
         }

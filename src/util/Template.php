@@ -52,7 +52,7 @@ class Template
             return $data[$key];
         }
 
-        return $default;
+        return $default ?? 'undefined';
     }
 
     /**
@@ -87,7 +87,7 @@ class Template
             }
         }
 
-        return $default;
+        return $default ?? 'undefined';
     }
 
     /**
@@ -101,21 +101,6 @@ class Template
     {
         $stack = [];
 
-        // match all block controls
-        // on an IF symbol
-        // - add to stack
-        // on an ELSEIF symbol
-        // - check last on stack for truthy, if so remove block
-        // - pop stack
-        // - add symbol to stack
-        // on an ELSE symbol
-        // - check last on stack for truthy, if so remove block
-        // - pop stack
-        // - add !symbol to stack
-        // on an ENDIF symbol
-        // - check last on stack for truthy, if so remove block
-        // - pop stack
-
         $matcher = '/{{\s*(if|elseif|else|endif)(?:\s+(!?[.\w]+))?\s*}}/';
 
         preg_replace_callback(
@@ -127,47 +112,30 @@ class Template
                     $variable = $matches[2];
                 }
                 $index = strpos($template, $fullControl);
-                $template = preg_replace("/\s*$fullControl/", '', $template);
+                $template = preg_replace("/\s*$fullControl/", '', $template, 1);
 
                 if ($symbol === 'if') {
                     // push to stack
                     $stack[] = [$variable, $index];
-
-                } elseif ($symbol === 'elseif') {
-                    [$var, $startIndex] = array_pop($stack);
-                    $not = strpos($var, '!') === 0;
-                    if ($not) $var = substr($var, 1);
-                    // if last var is false, remove block content
-                    if ($data[$var] !== $not) {
-                        $start = substr($template, 0, $startIndex);
-                        $end = substr($template, $index);
-                        $template = $start . $end;
-                    }
-                    $stack[] = [$variable, $index];
-
-                } elseif ($symbol === 'else') {
-                    [$var, $startIndex] = array_pop($stack);
-                    $not = strpos($var, '!') === 0;
-                    if ($not) $var = substr($var, 1);
-                    // if last var is false, remove block content
-                    if (($not && !!$data[$var]) || (!$not && !$data[$var])) {
-                        $start = substr($template, 0, $startIndex);
-                        $end = substr($template, $index);
-                        $template = $start . $end;
-                    }
-                    $stack[] = ["!$var", $index];
-
                 } else {
-                    // endif
-                    [$var, $startIndex] = array_pop($stack);
-                    $not = strpos($var, '!') === 0;
-                    if ($not) $var = substr($var, 1);
+                    // pop and eval on any other symbol
+                    [$prev, $prevIndex] = array_pop($stack);
+                    $not = strpos($prev, '!') === 0;
+                    if ($not) $prev = substr($prev, 1);
                     // if last var is false, remove block content
-                    if (($not && !!$data[$var]) || (!$not && !$data[$var])) {
-                        $start = substr($template, 0, $startIndex);
+                    if ($not === !!$data[$prev]) {
+                        $start = substr($template, 0, $prevIndex);
                         $end = substr($template, $index);
                         $template = $start . $end;
                     }
+                }
+
+                if ($symbol === 'elseif') {
+                    // push new variable to stack
+                    $stack[] = [$variable, $index];
+                } elseif ($symbol === 'else') {
+                    // push inverse variable to stack
+                    $stack[] = [$not ? $prev : "!$prev", $index];
                 }
             },
             $template,
