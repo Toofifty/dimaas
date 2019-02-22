@@ -1,6 +1,6 @@
 <?php
 
-namespace Util;
+namespace DIM\Util;
 
 /**
  * Simple template engine for inserting data into SVG and HTML templates.
@@ -37,7 +37,7 @@ class Template
      * @param array $data Render data
      * @return string resolved value
      */
-    private function resolveVariable(string $template, array $data): string
+    private function resolveVariable(array $matches, array $data): string
     {
         // $matches[0] is the entire match `<{key}>`
         // $matches[1] is the word inside `{<key>}`
@@ -48,7 +48,7 @@ class Template
             $default = $matches[2];
         }
 
-        if (key_exists($key, $data)) {
+        if (key_exists($key, $data) && $data[$key] !== null) {
             return $data[$key];
         }
 
@@ -62,7 +62,7 @@ class Template
      * @param array $data Render data
      * @return string resolved value
      */
-    private function resolveProperty(string $template, array $data): string
+    private function resolveProperty(array $matches, array $data): string
     {
         // $matches[0] is the entire match `<{key.prop}>`
         // $matches[1] is the first word inside `{<key>.prop}`
@@ -99,7 +99,81 @@ class Template
      */
     private function resolveBlocks(string $template, array $data): string
     {
-        // TODO
+        $stack = [];
+
+        // match all block controls
+        // on an IF symbol
+        // - add to stack
+        // on an ELSEIF symbol
+        // - check last on stack for truthy, if so remove block
+        // - pop stack
+        // - add symbol to stack
+        // on an ELSE symbol
+        // - check last on stack for truthy, if so remove block
+        // - pop stack
+        // - add !symbol to stack
+        // on an ENDIF symbol
+        // - check last on stack for truthy, if so remove block
+        // - pop stack
+
+        $matcher = '/{{\s*(if|elseif|else|endif)(?:\s+(!?[.\w]+))?\s*}}/';
+
+        preg_replace_callback(
+            $matcher,
+            function ($matches) use (&$stack, &$template, $data) {
+                [$fullControl, $symbol] = $matches;
+                $variable = null;
+                if (count($matches) > 2) {
+                    $variable = $matches[2];
+                }
+                $index = strpos($template, $fullControl);
+                $template = preg_replace("/\s*$fullControl/", '', $template);
+
+                if ($symbol === 'if') {
+                    // push to stack
+                    $stack[] = [$variable, $index];
+
+                } elseif ($symbol === 'elseif') {
+                    [$var, $startIndex] = array_pop($stack);
+                    $not = strpos($var, '!') === 0;
+                    if ($not) $var = substr($var, 1);
+                    // if last var is false, remove block content
+                    if ($data[$var] !== $not) {
+                        $start = substr($template, 0, $startIndex);
+                        $end = substr($template, $index);
+                        $template = $start . $end;
+                    }
+                    $stack[] = [$variable, $index];
+
+                } elseif ($symbol === 'else') {
+                    [$var, $startIndex] = array_pop($stack);
+                    $not = strpos($var, '!') === 0;
+                    if ($not) $var = substr($var, 1);
+                    // if last var is false, remove block content
+                    if (($not && !!$data[$var]) || (!$not && !$data[$var])) {
+                        $start = substr($template, 0, $startIndex);
+                        $end = substr($template, $index);
+                        $template = $start . $end;
+                    }
+                    $stack[] = ["!$var", $index];
+
+                } else {
+                    // endif
+                    [$var, $startIndex] = array_pop($stack);
+                    $not = strpos($var, '!') === 0;
+                    if ($not) $var = substr($var, 1);
+                    // if last var is false, remove block content
+                    if (($not && !!$data[$var]) || (!$not && !$data[$var])) {
+                        $start = substr($template, 0, $startIndex);
+                        $end = substr($template, $index);
+                        $template = $start . $end;
+                    }
+                }
+            },
+            $template,
+            PREG_OFFSET_CAPTURE
+        );
+
         return $template;
     }
 
@@ -163,7 +237,7 @@ class Template
      */
     public function render(array $data): string
     {
-        $template = $this->resolveBlocks($template, $data);
+        $template = $this->resolveBlocks($this->template, $data);
         $template = $this->resolveVariables($template, $data);
         $template = $this->resolveProperties($template, $data);
 

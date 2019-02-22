@@ -37,6 +37,32 @@ function validate($properties, $data = null, string $dataName = 'data'): void
     }
 }
 
+/**
+ * Validate that one of the options are in the data
+ *
+ * @param string[] $properties
+ * @param mixed $data
+ * @param string $dataName Name to show in errors, default to 'data'
+ * @return void
+ */
+function validateOneOf(array $properties, $data = null, string $dataName = 'data'): void
+{
+    $exists = false;
+    foreach ($properties as $property) {
+        if (($data !== null && property_exists($data, $property))
+            || ($data === null && param($property) !== null)) {
+            $exists = true;
+        }
+    }
+    if (!$exists) {
+        respond([
+            'status' => 'error',
+            'message' => "One of the following properties is required in request $dataName:"
+                . implode(', ', $properties)
+        ], 400);
+    }
+}
+
 
 /**
  * Convert any data to string (pretty JSON if possible)
@@ -112,8 +138,13 @@ function param(string $key, $default = null)
  * @param int $length
  * @return void
  */
-function str_random(int $length)
+function str_random(int $length): string
 {
     $pool = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
     return substr(str_shuffle(str_repeat($pool, 5)), 0, $length);
+}
+
+function dist(int $x1, int $y1, int $x2, int $y2): int
+{
+    return (($x1 - $x2) * ($x1 - $x2) + ($y1 - $y2) * ($y1 - $y2));
 }

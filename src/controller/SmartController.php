@@ -3,6 +3,8 @@
 namespace DIM\Controller;
 
 use DIM\Util\Image;
+use DIM\Util\Template;
+use DIM\DevicePicker;
 
 class SmartController
 {
@@ -17,12 +19,25 @@ class SmartController
 
     public function fromSize(array $params)
     {
-        $width = $params['width'] ?? $params['both'];
-        $height = $params['height'] ?? $params['both'];
+        validate('image');
 
-        // $this->pickDevice()
-        // Template::compile($device, [$options])
+        $params['width'] = $params['width'] ?? $params['both'];
+        $params['height'] = $params['height'] ?? $params['both'];
+        $params['image_url'] = param('image');
+        $params['inline'] = param('inline');
 
-        dd([$width, $height]);
+        header('Content-Type: image/svg+xml');
+
+        if (!$params['inline']) {
+            $image = new Image(param('image'));
+            $params['image'] = $image->base64();
+        }
+
+        return Template::compile($this->pickTemplate($params), $params);
+    }
+
+    private function pickTemplate(array $options): string
+    {
+        return (new DevicePicker)->pick($options);
     }
 }

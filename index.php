@@ -7,6 +7,8 @@ use DIM\Util\Router;
 
 define('BASE_DIR', __DIR__);
 
+(new Symfony\Component\Dotenv\Dotenv())->load(__DIR__ . '/.env');
+
 try {
     Router::execute($_SERVER['REQUEST_URI']);
 } catch (Error $e) {

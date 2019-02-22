@@ -1,0 +1,12 @@
+<svg width="375" height="812" viewBox="0 0 375 812" fill="none" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<rect y="26" width="375" height="759" fill="url(#pattern0)" />
+<path fill-rule="evenodd" clip-rule="evenodd" d="M24 0C10.7452 0 0 10.7452 0 24V788C0 801.255 10.7452 812 24 812H351C364.255 812 375 801.255 375 788V24C375 10.7452 364.255 0 351 0H24ZM31 26C17.7452 26 7 36.7452 7 50V762C7 775.255 17.7452 786 31 786H344C357.255 786 368 775.255 368 762V50C368 36.7452 357.255 26 344 26H31Z" fill="#282727"/>
+{{ if image_url }}
+    <defs>
+    <pattern id="pattern0" patternContentUnits="objectBoundingBox" width="1" height="1">
+    <use xlink:href="#image0" transform="translate(-0.541765) scale(0.0297647 0.0147059)"/>
+    </pattern>
+    <image id="image0" width="70" height="68" xlink:href="{{ if inline }}{{ image_url }}{{ else }}data:image/png;base64,{{ image }}{{ endif }}" />
+    </defs>
+{{ endif }}
+</svg>

@@ -119,6 +119,6 @@ class Router
 
         [[$class, $func], $params] = self::getRoute(self::clean($path));
 
-        (new $class)->$func($params);
+        respond((new $class)->$func($params));
     }
 }
